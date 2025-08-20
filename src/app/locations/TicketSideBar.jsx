@@ -20,12 +20,22 @@ function formatSummary(html) {
   return cleaned
 }
 
+const FEEDBACK_OPTIONS = [
+  { value: 1, emoji: '😡', label: 'Poor' },
+  { value: 2, emoji: '😞', label: 'Bad' },
+  { value: 3, emoji: '😐', label: 'Average' },
+  { value: 4, emoji: '🙂', label: 'Good' },
+  { value: 5, emoji: '😍', label: 'Excellent' }
+]
+
 const TicketSideBar = () => {
   const client = useClient()
   const [ticketId, setTicketId] = useState(null)
   const [summary, setSummary] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [rating, setRating] = useState(null)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   useEffect(() => {
     client.get('ticket.id').then(({ 'ticket.id': id }) => setTicketId(id))
@@ -59,8 +69,14 @@ const TicketSideBar = () => {
   }, [ticketId, client])
 
   useEffect(() => {
-    client.invoke('resize', { width: '100%', height: '600px' })
+    client.invoke('resize', { width: '100%', height: '700px' })
   }, [client])
+
+  const handleRating = (value) => {
+    setRating(value)
+    setFeedbackSubmitted(true)
+    // You can add logic here to send feedback to your backend or analytics if needed
+  }
 
   return (
     <GridContainer>
@@ -73,6 +89,32 @@ const TicketSideBar = () => {
         {!loading && !error && summary && (
           <SummaryContainer dangerouslySetInnerHTML={{ __html: summary }} />
         )}
+      </Row>
+<Row justifyContent="center">
+        <FeedbackForm>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>How would you rate this summary?</div>
+          <EmojiRow>
+            {FEEDBACK_OPTIONS.map(opt => (
+              <EmojiLabel key={opt.value}>
+                <EmojiButton
+                  selected={rating === opt.value}
+                  onClick={() => handleRating(opt.value)}
+                  disabled={feedbackSubmitted}
+                  aria-label={opt.label}
+                  title={opt.label}
+                >
+                  {opt.emoji}
+                </EmojiButton>
+                <span className="emoji-label">{opt.label}</span>
+              </EmojiLabel>
+            ))}
+          </EmojiRow>
+          {feedbackSubmitted && (
+            <div style={{ marginTop: 12, color: '#008060', fontWeight: 500 }}>
+              Thank you for your feedback!
+            </div>
+          )}
+        </FeedbackForm>
       </Row>
     </GridContainer>
   )
@@ -120,6 +162,58 @@ const SummaryContainer = styled.div`
     color: #17494d;
     text-decoration: underline;
     word-break: break-all;
+  }
+`
+
+const FeedbackForm = styled.div`
+  margin-top: 32px;
+  padding: 16px 8px 8px 8px;
+  border-radius: 8px;
+  background: #f8fafb;
+  box-shadow: 0 1px 2px rgba(23,73,77,0.04);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+`
+
+const EmojiRow = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin: 16px 0 0 0;
+  gap: 8px;
+`
+
+const EmojiLabel = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .emoji-label {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #666;
+    font-weight: 400;
+    text-align: center;
+    min-width: 60px;
+    word-break: keep-all;
+  }
+`
+
+const EmojiButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 2rem;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.1s;
+  ${({ selected }) => selected && `
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 2px #008060);
+  `}
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 `
 
