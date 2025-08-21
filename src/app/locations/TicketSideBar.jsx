@@ -37,6 +37,20 @@ const TicketSideBar = () => {
   const [rating, setRating] = useState(null)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
+  // Dynamically resize to fit content and container
+  useEffect(() => {
+    function resizeSidebar() {
+      const height = Math.min(
+        Math.max(document.body.scrollHeight, 350),
+        1200
+      )
+      client.invoke('resize', { width: '100%', height: `${height}px` })
+    }
+    resizeSidebar()
+    window.addEventListener('resize', resizeSidebar)
+    return () => window.removeEventListener('resize', resizeSidebar)
+  }, [summary, loading, error, feedbackSubmitted, client])
+
   useEffect(() => {
     client.get('ticket.id').then(({ 'ticket.id': id }) => setTicketId(id))
   }, [client])
@@ -68,10 +82,6 @@ const TicketSideBar = () => {
     })
   }, [ticketId, client])
 
-  useEffect(() => {
-    client.invoke('resize', { width: '100%', height: '700px' })
-  }, [client])
-
   const handleRating = (value) => {
     setRating(value)
     setFeedbackSubmitted(true)
@@ -90,7 +100,7 @@ const TicketSideBar = () => {
           <SummaryContainer dangerouslySetInnerHTML={{ __html: summary }} />
         )}
       </Row>
-<Row justifyContent="center">
+      <Row justifyContent="center">
         <FeedbackForm>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>How would you rate this summary?</div>
           <EmojiRow>
@@ -123,28 +133,50 @@ const TicketSideBar = () => {
 const GridContainer = styled(Grid)`
   display: grid;
   gap: ${(props) => props.theme.space.sm};
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100vw;
+  min-width: 0;
+  /* Restore horizontal scroll if content overflows */
+  overflow-x: auto;
 `
 
 const SummaryContainer = styled.div`
   margin-top: 0;
   text-align: left;
-  max-width: 400px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   white-space: normal;
   font-size: 14px;
   line-height: 1.5;
+  /* Restore horizontal scroll if content overflows */
+  overflow-x: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
   & h2 {
     font-size: 1.1em;
     margin: 1.5em 0 1em 0;
     color: #17494d;
     text-align: center;
     font-weight: bold;
+    word-break: break-word;
   }
   & ul, & ol {
-    margin-left: 1.2em;
+    margin-left: 0.8em;
+    margin-right: 0;
     margin-bottom: 1em;
+    padding-left: 1em;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
   & li {
     margin-bottom: 0.5em;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   & strong {
     color: #17494d;
@@ -154,9 +186,11 @@ const SummaryContainer = styled.div`
     padding: 2px 4px;
     border-radius: 3px;
     font-size: 0.95em;
+    word-break: break-word;
   }
   & p {
     margin: 0.5em 0;
+    word-break: break-word;
   }
   & a {
     color: #17494d;
@@ -171,7 +205,7 @@ const FeedbackForm = styled.div`
   border-radius: 8px;
   background: #f8fafb;
   box-shadow: 0 1px 2px rgba(23,73,77,0.04);
-  max-width: 400px;
+  max-width: 100%;
   width: 100%;
   text-align: center;
 `
@@ -181,7 +215,7 @@ const EmojiRow = styled.div`
   justify-content: center;
   align-items: flex-end;
   margin: 16px 0 0 0;
-  gap: 8px;
+  gap: 14px;
 `
 
 const EmojiLabel = styled.div`
